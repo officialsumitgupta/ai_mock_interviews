@@ -1,43 +1,48 @@
-import React from 'react';
-import {FormControl, FormDescription, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
-import {Controller, FieldValues, Control, Path} from "react-hook-form"; // Use correct types
-import {Input} from "@/components/ui/input"; // Update import as needed
+import { Controller, Control, FieldValues, Path } from "react-hook-form";
+
+import {
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 interface FormFieldProps<T extends FieldValues> {
     control: Control<T>;
     name: Path<T>;
     label: string;
-    placeholder: string;
-    type: 'text' | 'email' | 'password' | 'file';
+    placeholder?: string;
+    type?: "text" | "email" | "password";
 }
 
-function FormField<T extends FieldValues>({
+const FormField = <T extends FieldValues>({
                                               control,
                                               name,
                                               label,
                                               placeholder,
                                               type = "text",
-                                          }: FormFieldProps<T>) {
+                                          }: FormFieldProps<T>) => {
     return (
         <Controller
             control={control}
             name={name}
-            render={({field}) => (
+            render={({ field }) => (
                 <FormItem>
                     <FormLabel className="label">{label}</FormLabel>
                     <FormControl>
                         <Input
                             className="input"
-                            placeholder={placeholder}
                             type={type}
+                            placeholder={placeholder}
                             {...field}
                         />
                     </FormControl>
-                    <FormMessage/>
+                    <FormMessage />
                 </FormItem>
             )}
         />
     );
-}
+};
 
 export default FormField;
