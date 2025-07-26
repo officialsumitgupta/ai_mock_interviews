@@ -95,23 +95,48 @@ export async function getLatestInterviews(
 ): Promise<Interview[] | null> {
     const { userId, limit = 20 } = params;
 
-    const interviews = await db
-        .collection("interviews")
-        .orderBy("createdAt", "desc")
-        .where("finalized", "==", true)
-        .where("userId", "!=", userId)
-        .limit(limit)
-        .get();
+    if (!userId) {
+        console.warn("getLatestInterviews called with undefined userId");
+        return [];
+    }
 
-    return interviews.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as Interview[];
+    try {
+        // Very simple query - just get all interviews ordered by creation date
+        // This avoids the need for composite indexes
+        const interviews = await db
+            .collection("interviews")
+            .orderBy("createdAt", "desc")
+            .limit(50) // Get more to account for filtering
+            .get();
+
+        // Filter in code to avoid complex Firestore queries
+        const filteredInterviews = interviews.docs
+            .map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }))
+            .filter((interview: any) => 
+                interview.finalized === true && 
+                interview.userId !== userId
+            )
+            .slice(0, limit);
+
+        return filteredInterviews as Interview[];
+    } catch (error) {
+        console.error("Error fetching latest interviews:", error);
+        // Return empty array instead of null to prevent app crashes
+        return [];
+    }
 }
 
 export async function getInterviewsByUserId(
     userId: string
 ): Promise<Interview[] | null> {
+    if (!userId) {
+        console.warn("getInterviewsByUserId called with undefined userId");
+        return [];
+    }
+
     const interviews = await db
         .collection("interviews")
         .where("userId", "==", userId)

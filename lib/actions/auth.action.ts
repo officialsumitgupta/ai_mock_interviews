@@ -72,16 +72,41 @@ export async function signIn(params: SignInParams) {
     const { email, idToken } = params;
 
     try {
+        console.log("Sign in attempt for email:", email);
+        
         const userRecord = await auth.getUserByEmail(email);
-        if (!userRecord)
+        if (!userRecord) {
+            console.log("User not found in Firebase Auth:", email);
             return {
                 success: false,
                 message: "User does not exist. Create an account.",
             };
+        }
 
+        console.log("User found in Firebase Auth, checking Firestore record...");
+        
+        // Check if user exists in Firestore, if not create the record
+        const userDoc = await db.collection("users").doc(userRecord.uid).get();
+        if (!userDoc.exists) {
+            console.log("User not found in Firestore, creating record...");
+            await db.collection("users").doc(userRecord.uid).set({
+                name: userRecord.displayName || email.split('@')[0],
+                email: email,
+                createdAt: new Date().toISOString(),
+            });
+            console.log("User record created in Firestore");
+        }
+
+        console.log("Setting session cookie...");
         await setSessionCookie(idToken);
+        console.log("Session cookie set successfully");
+        
+        return {
+            success: true,
+            message: "Signed in successfully.",
+        };
     } catch (error: any) {
-        console.log("");
+        console.log("Sign in error:", error);
 
         return {
             success: false,
@@ -102,24 +127,37 @@ export async function getCurrentUser(): Promise<User | null> {
     const cookieStore = await cookies();
 
     const sessionCookie = cookieStore.get("session")?.value;
-    if (!sessionCookie) return null;
+    console.log("Session cookie exists:", !!sessionCookie);
+    
+    if (!sessionCookie) {
+        console.log("No session cookie found");
+        return null;
+    }
 
     try {
         const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+        console.log("Session verified for user:", decodedClaims.uid);
 
         // get user info from db
         const userRecord = await db
             .collection("users")
             .doc(decodedClaims.uid)
             .get();
-        if (!userRecord.exists) return null;
+            
+        if (!userRecord.exists) {
+            console.log("User record not found in database for uid:", decodedClaims.uid);
+            return null;
+        }
 
-        return {
+        const userData = {
             ...userRecord.data(),
             id: userRecord.id,
         } as User;
+        
+        console.log("User data retrieved:", { id: userData.id, email: userData.email });
+        return userData;
     } catch (error) {
-        console.log(error);
+        console.log("Session verification failed:", error);
 
         // Invalid or expired session
         return null;
