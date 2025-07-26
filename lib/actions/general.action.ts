@@ -41,12 +41,12 @@ export async function createFeedback(params: CreateFeedbackParams) {
         const feedback = {
             interviewId: interviewId,
             userId: userId,
-        //     totalScore: object.totalScore,
-        //     categoryScores: object.categoryScores,
-        //     strengths: object.strengths,
-        //     areasForImprovement: object.areasForImprovement,
-        //     finalAssessment: object.finalAssessment,
-        //     createdAt: new Date().toISOString(),
+            totalScore: object.totalScore,
+            categoryScores: object.categoryScores,
+            strengths: object.strengths,
+            areasForImprovement: object.areasForImprovement,
+            finalAssessment: object.finalAssessment,
+            createdAt: new Date().toISOString(),
         };
 
         let feedbackRef;
