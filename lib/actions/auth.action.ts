@@ -29,6 +29,7 @@ export async function signUp(params: SignUpParams) {
     const { uid, name, email } = params;
 
     try {
+
         // check if user exists in db
         const userRecord = await db.collection("users").doc(uid).get();
         if (userRecord.exists)
